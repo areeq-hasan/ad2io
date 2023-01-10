@@ -19,6 +19,10 @@ interface Waveform {
   phase: number
 }
 
+interface Pulse {
+  channel: number,
+}
+
 function App() {
 
   const [devices, setDevices] = useState<Device[] | undefined>(undefined);
@@ -26,7 +30,7 @@ function App() {
   const [active, setActive] = useState<boolean>(false);
 
   const [generating, setGenerating] = useState<boolean>(false);
-  const [generateParameters, setGenerateParameters] = useState<Waveform>({
+  const [waveform, setWaveform] = useState<Waveform>({
     channel: 0,
     function: 1,
     frequency: 1000,
@@ -35,6 +39,9 @@ function App() {
     symmetry: 50,
     phase: 0
   });
+
+  const [pulsing, setPulsing] = useState<boolean>(false);
+  const [pulse, setPulse] = useState<Pulse>({ channel: 1 });
 
   useEffect(() => {
     fetch("http://127.0.0.1:5000/devices")
@@ -69,60 +76,81 @@ function App() {
           {active &&
             <div className="wrapper">
               <div className="stack">
-                <h2>Generate</h2>
-                <form onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!generating) fetch(`http://127.0.0.1:5000/device/start?channel=${generateParameters.channel}&function=${generateParameters.function}&frequency=${generateParameters.frequency}&amplitude=${generateParameters.amplitude}&offset=${generateParameters.offset}&symmetry=${generateParameters.symmetry}&phase=${generateParameters.phase}`).then((response) => { if (response.ok) setGenerating(true) });
-                  else fetch("http://127.0.0.1:5000/device/stop").then((response) => { if (response.ok) setGenerating(false) });
-                }}>
-                  <label>
-                    Channel:{" "}
-                    <select value={generateParameters.channel} onChange={(event) => setGenerateParameters({ ...generateParameters, channel: parseInt(event.target.value) })} disabled={generating}>
-                      <option value={0}>Channel 1 (W1)</option>
-                      <option value={1}>Channel 2 (W2)</option>
-                    </select>
-                  </label>
-                  <label>
-                    Function:{" "}
-                    <select value={generateParameters.function} onChange={(event) => setGenerateParameters({ ...generateParameters, function: parseInt(event.target.value) })} disabled={generating}>
-                      <option value={0}>DC</option>
-                      <option value={1}>Sine</option>
-                      <option value={2}>Square</option>
-                      <option value={3}>Triangle</option>
-                      <option value={4}>Ramp Up</option>
-                      <option value={5}>Ramp Down</option>
-                      <option value={6}>Noise</option>
-                      <option value={7}>Pulse</option>
-                      <option value={8}>Trapezium</option>
-                      <option value={9}>Sine Power</option>
-                    </select>
-                  </label>
-                  <label>
-                    Frequency:{" "}
-                    <input type="number" value={generateParameters.frequency} onChange={(event) => setGenerateParameters({ ...generateParameters, frequency: parseFloat(event.target.value) })} disabled={generating} />
-                  </label>
-                  <label>
-                    Amplitude:{" "}
-                    <input type="number" value={generateParameters.amplitude} onChange={(event) => setGenerateParameters({ ...generateParameters, amplitude: parseFloat(event.target.value) })} disabled={generating} />
-                  </label>
-                  <label>
-                    Offset:{" "}
-                    <input type="number" value={generateParameters.offset} onChange={(event) => setGenerateParameters({ ...generateParameters, offset: parseFloat(event.target.value) })} disabled={generating} />
-                  </label>
-                  <label>
-                    Symmetry:{" "}
-                    <input type="number" value={generateParameters.symmetry} onChange={(event) => setGenerateParameters({ ...generateParameters, symmetry: parseFloat(event.target.value) })} disabled={generating} />
-                  </label>
-                  <label>
-                    Phase:{" "}
-                    <input type="number" value={generateParameters.phase} onChange={(event) => setGenerateParameters({ ...generateParameters, phase: parseFloat(event.target.value) })} disabled={generating} />
-                  </label>
-                  <button type="submit">{!generating ? "Start" : "Stop"}</button>
-                </form>
+                <h2>Generation</h2>
+                <div className="wrapper">
+                  <div className="stack">
+                    <h3>Waveform</h3>
+                    <form onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!generating) fetch(`http://127.0.0.1:5000/device/start?channel=${waveform.channel}&function=${waveform.function}&frequency=${waveform.frequency}&amplitude=${waveform.amplitude}&offset=${waveform.offset}&symmetry=${waveform.symmetry}&phase=${waveform.phase}`).then((response) => { if (response.ok) setGenerating(true) });
+                      else fetch("http://127.0.0.1:5000/device/stop").then((response) => { if (response.ok) setGenerating(false) });
+                    }}>
+                      <label>
+                        Channel:{" "}
+                        <select value={waveform.channel} onChange={(event) => setWaveform({ ...waveform, channel: parseInt(event.target.value) })} disabled={generating}>
+                          <option value={0}>W1</option>
+                          <option value={1}>W2</option>
+                        </select>
+                      </label>
+                      <label>
+                        Function:{" "}
+                        <select value={waveform.function} onChange={(event) => setWaveform({ ...waveform, function: parseInt(event.target.value) })} disabled={generating}>
+                          <option value={0}>DC</option>
+                          <option value={1}>Sine</option>
+                          <option value={2}>Square</option>
+                          <option value={3}>Triangle</option>
+                          <option value={4}>Ramp Up</option>
+                          <option value={5}>Ramp Down</option>
+                          <option value={6}>Noise</option>
+                          <option value={7}>Pulse</option>
+                          <option value={8}>Trapezium</option>
+                          <option value={9}>Sine Power</option>
+                        </select>
+                      </label>
+                      <label>
+                        Frequency:{" "}
+                        <input type="number" value={waveform.frequency} onChange={(event) => setWaveform({ ...waveform, frequency: parseFloat(event.target.value) })} disabled={generating} />
+                      </label>
+                      <label>
+                        Amplitude:{" "}
+                        <input type="number" value={waveform.amplitude} onChange={(event) => setWaveform({ ...waveform, amplitude: parseFloat(event.target.value) })} disabled={generating} />
+                      </label>
+                      <label>
+                        Offset:{" "}
+                        <input type="number" value={waveform.offset} onChange={(event) => setWaveform({ ...waveform, offset: parseFloat(event.target.value) })} disabled={generating} />
+                      </label>
+                      <label>
+                        Symmetry:{" "}
+                        <input type="number" value={waveform.symmetry} onChange={(event) => setWaveform({ ...waveform, symmetry: parseFloat(event.target.value) })} disabled={generating} />
+                      </label>
+                      <label>
+                        Phase:{" "}
+                        <input type="number" value={waveform.phase} onChange={(event) => setWaveform({ ...waveform, phase: parseFloat(event.target.value) })} disabled={generating} />
+                      </label>
+                      <button type="submit">{!generating ? "Start" : "Stop"}</button>
+                    </form>
+                  </div>
+                  <div className="stack">
+                    <h3>Pulse</h3>
+                    <form onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!pulsing) fetch(`http://127.0.0.1:5000/device/pulse/start?channel=${pulse.channel}`).then((response) => { if (response.ok) setPulsing(true) });
+                      else fetch(`http://127.0.0.1:5000/device/pulse/stop?channel=${pulse.channel}`).then((response) => { if (response.ok) setPulsing(false) });
+                    }}>
+                      <label>
+                        Channel:{" "}
+                        <select value={pulse.channel} onChange={(event) => setPulse({ ...pulse, channel: parseInt(event.target.value) })} disabled={pulsing}>
+                          {[...Array(15).keys()].map(i => i + 1).map((index) => <option value={index}>{index}</option>)}
+                        </select>
+                      </label>
+                      <button type="submit">{!pulsing ? "Start" : "Stop"}</button>
+                    </form>
+                  </div>
+                </div>
               </div>
               <div className="stack">
-                <h2>Acquire</h2>
-                <img src={generating ? "http://127.0.0.1:5000/device/stream" : ""}></img>
+                <h2>Acquisition</h2>
+                <img width={640} height={480} src={generating ? "http://127.0.0.1:5000/device/acquire" : ""}></img>
               </div>
             </div>
           }

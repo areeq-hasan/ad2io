@@ -4,11 +4,10 @@ import atexit
 from flask import Flask, Response, request
 from flask_cors import CORS
 
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from device import Devices, Waveform
+from device import Devices, Waveform, Pulse
 
 devices = Devices()
 
@@ -41,24 +40,6 @@ def deactivate_device():
     return "Deactivated device."
 
 
-def acquisition():
-    for data in devices.active.acquire():
-        figure = Figure()
-        axes = figure.add_subplot(1, 1, 1)
-        axes.plot(data)
-        axes.set_title("Analog Acqusition (CH1)")
-        axes.set_ylabel("Voltage (V)")
-        axes.set_xlabel("Time (seconds)")
-
-        image = io.BytesIO()
-        FigureCanvas(figure).print_jpeg(image)
-
-        yield (
-            b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n" + image.getvalue() + b"\r\n"
-        )
-
-
 @app.route("/device/start")
 def start():
     channel = int(request.args.get("channel"))
@@ -76,12 +57,43 @@ def start():
     return "Started."
 
 
-@app.route("/device/stream")
-def stream():
+def acquisition():
+    for figure in devices.active.acquire_plots():
+        image = io.BytesIO()
+        figure.savefig(image, format="svg")
+
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/svg+xml\r\n\r\n" + image.getvalue() + b"\r\n"
+        )
+
+
+@app.route("/device/acquire")
+def acquire():
     return Response(
         acquisition(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@app.route("/device/pulse/start")
+def start_pulsing():
+    devices.active.start_pulsing(
+        Pulse(
+            channel=int(request.args.get("channel")),
+        )
+    )
+    return "Started pulsing."
+
+
+@app.route("/device/pulse/stop")
+def stop_pulsing():
+    devices.active.stop_pulsing(
+        Pulse(
+            channel=int(request.args.get("channel")),
+        )
+    )
+    return "Stopped pulsing."
 
 
 @app.route("/device/stop")
